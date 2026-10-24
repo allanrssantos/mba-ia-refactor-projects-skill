@@ -1,0 +1,46 @@
+﻿== stdout ==
+ * Serving Flask app 'src.app'
+ * Debug mode: off
+== stderr ==
+2026-10-24 13:37:39,980 INFO werkzeug: WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+2026-10-24 13:37:39,982 INFO werkzeug: Press CTRL+C to quit
+2026-10-24 13:37:41,429 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:41] "GET / HTTP/1.1" 200 -
+2026-10-24 13:37:41,708 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:41] "GET /health HTTP/1.1" 200 -
+2026-10-24 13:37:41,962 INFO src.controllers.produto_controller: listando 10 produtos
+2026-10-24 13:37:41,967 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:41] "GET /produtos HTTP/1.1" 200 -
+2026-10-24 13:37:42,215 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:42] "GET /produtos/1 HTTP/1.1" 200 -
+2026-10-24 13:37:42,490 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:42] "GET /produtos/9999 HTTP/1.1" 404 -
+2026-10-24 13:37:42,742 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:42] "GET /produtos/busca?q=a HTTP/1.1" 200 -
+2026-10-24 13:37:43,047 INFO src.controllers.produto_controller: produto criado id=11
+2026-10-24 13:37:43,054 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:43] "POST /produtos HTTP/1.1" 201 -
+2026-10-24 13:37:43,322 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:43] "POST /produtos HTTP/1.1" 400 -
+2026-10-24 13:37:43,630 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:43] "PUT /produtos/1 HTTP/1.1" 200 -
+2026-10-24 13:37:43,886 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:43] "PUT /produtos/9999 HTTP/1.1" 404 -
+2026-10-24 13:37:44,167 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:44] "GET /usuarios HTTP/1.1" 200 -
+2026-10-24 13:37:44,435 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:44] "GET /usuarios/1 HTTP/1.1" 200 -
+2026-10-24 13:37:44,699 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:44] "GET /usuarios/9999 HTTP/1.1" 404 -
+2026-10-24 13:37:45,113 INFO src.controllers.usuario_controller: usuário criado id=4
+2026-10-24 13:37:45,119 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:45] "POST /usuarios HTTP/1.1" 201 -
+2026-10-24 13:37:45,371 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:45] "POST /usuarios HTTP/1.1" 400 -
+2026-10-24 13:37:45,765 INFO src.controllers.usuario_controller: login bem-sucedido id=1
+2026-10-24 13:37:45,767 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:45] "POST /login HTTP/1.1" 200 -
+2026-10-24 13:37:46,153 INFO src.controllers.usuario_controller: login falhou para usuário id desconhecido
+2026-10-24 13:37:46,156 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:46] "POST /login HTTP/1.1" 401 -
+2026-10-24 13:37:46,419 INFO src.services.notificacao_service: email: pedido 1 criado para usuario 1
+2026-10-24 13:37:46,420 INFO src.services.notificacao_service: sms: pedido 1 recebido
+2026-10-24 13:37:46,420 INFO src.services.notificacao_service: push: novo pedido 1 recebido pelo sistema
+2026-10-24 13:37:46,426 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:46] "POST /pedidos HTTP/1.1" 201 -
+2026-10-24 13:37:46,683 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:46] "POST /pedidos HTTP/1.1" 400 -
+2026-10-24 13:37:46,935 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:46] "GET /pedidos HTTP/1.1" 200 -
+2026-10-24 13:37:47,202 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:47] "GET /pedidos/usuario/1 HTTP/1.1" 200 -
+2026-10-24 13:37:47,479 INFO src.services.notificacao_service: notificacao: pedido 1 aprovado, preparar envio
+2026-10-24 13:37:47,486 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:47] "PUT /pedidos/1/status HTTP/1.1" 200 -
+2026-10-24 13:37:47,744 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:47] "PUT /pedidos/1/status HTTP/1.1" 400 -
+2026-10-24 13:37:48,011 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:48] "GET /relatorios/vendas HTTP/1.1" 200 -
+2026-10-24 13:37:48,292 INFO src.controllers.produto_controller: produto deletado id=11
+2026-10-24 13:37:48,300 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:48] "DELETE /produtos/11 HTTP/1.1" 200 -
+2026-10-24 13:37:48,558 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:48] "DELETE /produtos/9999 HTTP/1.1" 404 -
+2026-10-24 13:37:48,818 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:48] "POST /admin/query HTTP/1.1" 403 -
+2026-10-24 13:37:49,098 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:49] "POST /admin/query HTTP/1.1" 403 -
+2026-10-24 13:37:49,349 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 13:37:49] "POST /admin/reset-db HTTP/1.1" 403 -

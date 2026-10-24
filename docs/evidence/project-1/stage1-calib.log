@@ -1,0 +1,227 @@
+Leitura do catálogo, do template e das seções Python/Flask concluída. Nenhuma API depreciada da tabela aparece no código (AP-16 não se aplica). Todos os 4 arquivos-fonte foram lidos com numeração de linhas; segue o relatório.
+
+================================
+ARCHITECTURE AUDIT REPORT
+================================
+Project: code-smells-project
+Stack:   Python + Flask
+Files:   4 analyzed | ~780 lines of code
+
+## Summary
+CRITICAL: 11 | HIGH: 7 | MEDIUM: 7 | LOW: 6
+
+## Findings
+
+### [CRITICAL] Hardcoded Credentials
+File: app.py:7
+Description: `app.config["SECRET_KEY"] = "minha-chave-super-secreta-123"` define a chave de sessão como literal no código versionado.
+Impact: Qualquer pessoa com acesso ao repositório consegue forjar sessões/cookies assinados; a rotação da chave exige novo deploy.
+Recommendation: Ler `SECRET_KEY` de variável de ambiente em um módulo de configuração, com default de desenvolvimento não secreto, e documentar em `.env.example`; tratar o valor atual como comprometido (T-01).
+
+### [CRITICAL] Hardcoded Credentials
+File: controllers.py:289
+Description: Segunda cópia do segredo como literal: `"secret_key": "minha-chave-super-secreta-123"` dentro do dicionário de resposta de `health_check`.
+Impact: O segredo fica duplicado no código e sai da sincronia com a config; mesmo após mover a chave para o ambiente, esta cópia continuaria vazando o valor antigo.
+Recommendation: Remover o literal e nunca referenciar o segredo fora do módulo de configuração (T-01).
+
+### [CRITICAL] SQL Injection
+File: app.py:69
+Description: O endpoint `/admin/query` lê `dados.get("sql")` do corpo da requisição e o passa diretamente a `cursor.execute(query)`.
+Impact: Execução remota de SQL arbitrário (leitura, alteração e destruição do banco) por qualquer cliente sem autenticação.
+Recommendation: Proteger a rota com guard admin por token e registrar a execução de SQL arbitrário como risco residual (T-05, T-02).
+
+### [CRITICAL] SQL Injection
+File: models.py:109-111
+Other occurrences: models.py:28, models.py:47-50, models.py:57-61, models.py:68, models.py:92, models.py:126-129, models.py:140, models.py:148-151, models.py:155, models.py:157-161 (+9 more)
+Description: `login_usuario` monta `"SELECT * FROM usuarios WHERE email = '" + email + "' AND senha = '" + senha + "'"`; todas as 20 consultas do módulo concatenam valores da requisição, inclusive `LIKE '%" + termo + "%'` em `buscar_produtos` (289-297).
+Impact: Bypass de login com `' OR '1'='1`, leitura/alteração/remoção arbitrária de dados e quebra por aspas em nomes legítimos (ex.: `Monitor 27''`).
+Recommendation: Parametrizar todas as consultas com placeholders `?` e tuplas; em `buscar_produtos`, montar lista de condições e lista de parâmetros em paralelo (T-02).
+
+### [CRITICAL] God Class / God Method
+File: controllers.py:1-292
+Description: Módulo único com handlers de 4 domínios (produtos, usuários, pedidos, relatórios) que lê request/escreve response, aplica regras (cadeias de validação, lista de categorias, decisões de notificação) e executa SQL direto em `health_check` (266-273).
+Impact: Impossível testar regras sem HTTP; qualquer mudança em um domínio arrisca os outros; conflitos de merge constantes.
+Recommendation: Separar por domínio em controllers finos, com regras e consultas na camada de modelo (T-03, T-07, T-08).
+
+### [CRITICAL] God Class / God Method
+File: models.py:1-314
+Description: Módulo de 314 linhas com CRUD e SQL cru das 4 tabelas (`produtos`, `usuarios`, `pedidos`, `itens_pedido`) mais regras de negócio: checagem de estoque e cálculo de total em `criar_pedido` (133-169) e faixas de desconto em `relatorio_vendas` (256-262).
+Impact: Acesso a dados e regra de negócio inseparáveis; nenhuma parte pode ser testada ou substituída isoladamente.
+Recommendation: Dividir em um model por entidade (dados) e serviços de domínio para pedido e relatório, montados pelo composition root (T-03, T-08).
+
+### [CRITICAL] Sensitive Data Exposure
+File: controllers.py:287-289
+Description: `health_check` devolve ao cliente `"db_path": "loja.db"`, `"debug": True` e `"secret_key": "minha-chave-super-secreta-123"`, além de `"ambiente"`.
+Impact: Qualquer cliente anônimo obtém a chave de sessão e detalhes de configuração interna em um `GET /health`.
+Recommendation: Restringir a resposta de health a status e contagens; nunca serializar config ou segredos (T-04, T-16).
+
+### [CRITICAL] Sensitive Data Exposure
+File: models.py:83
+Other occurrences: models.py:99
+Description: `get_todos_usuarios` e `get_usuario_por_id` incluem `"senha": row["senha"]` no dicionário devolvido, exposto por `GET /usuarios` e `GET /usuarios/<int:id>`.
+Impact: Senhas de todos os usuários (em texto puro) entregues a qualquer cliente; violação de LGPD.
+Recommendation: Serializador de usuário com allow-list de campos públicos (`id`, `nome`, `email`, `tipo`, `criado_em`), removendo `senha` da resposta (T-04).
+
+### [CRITICAL] Unprotected Admin/Destructive Endpoint
+File: app.py:47-57
+Other occurrences: app.py:59-78
+Description: `POST /admin/reset-db` executa `DELETE FROM` nas 4 tabelas e `POST /admin/query` executa SQL arbitrário, ambos sem qualquer checagem de autenticação ou autorização.
+Impact: Qualquer pessoa na rede (bind em `0.0.0.0`) apaga o banco ou executa comandos SQL livremente.
+Recommendation: Manter as rotas registradas, protegidas por guard que compara `X-Admin-Token` com `ADMIN_TOKEN` do ambiente em tempo constante; sem token válido → 403 (T-05).
+
+### [CRITICAL] Insecure Password Storage
+File: database.py:75-83
+Description: O seed insere `("Admin", "admin@loja.com", "admin123", "admin")` e demais usuários com senha em texto puro na coluna `senha`.
+Impact: Vazamento do banco expõe imediatamente as credenciais, inclusive do administrador.
+Recommendation: Gerar o hash das senhas do seed com KDF com sal (`werkzeug.security.generate_password_hash`, já disponível via Flask) (T-06).
+
+### [CRITICAL] Insecure Password Storage
+File: models.py:126-129
+Other occurrences: models.py:109-111
+Description: `criar_usuario` grava a senha exatamente como recebida e `login_usuario` autentica por igualdade direta `AND senha = '...'` no SQL.
+Impact: Senhas recuperáveis em texto puro em qualquer vazamento; reutilização de senha compromete outras contas dos usuários.
+Recommendation: Persistir hash com sal e verificar com `check_password_hash`, aceitando o formato legado com rehash transparente no próximo login (T-06).
+
+### [HIGH] Business Logic in Controller/Route
+File: controllers.py:188-220
+Other occurrences: controllers.py:24-62, controllers.py:64-96, controllers.py:237-255, controllers.py:264-292
+Description: `criar_pedido` valida o payload, interpreta o resultado do model e dispara efeitos colaterais (`print("ENVIANDO EMAIL...")`, SMS, PUSH); `criar_produto`/`atualizar_produto` carregam cadeias de 9 `if` e a lista de categorias; `atualizar_status_pedido` decide notificações por status; `health_check` consulta o banco diretamente.
+Impact: Regras de validação e notificação não são reutilizáveis nem testáveis sem HTTP e já divergem entre criação e atualização.
+Recommendation: Controllers finos (entrada → validador → model/serviço → resposta); validação em validadores por entidade e notificações em serviço injetável (T-07, T-11).
+
+### [HIGH] Global Mutable State
+File: database.py:4-11
+Description: `db_connection = None` no módulo, reatribuído via `global db_connection` em `get_db()`, com `sqlite3.connect(db_path, check_same_thread=False)` compartilhado entre todas as threads do servidor.
+Impact: Condições de corrida entre requisições concorrentes na mesma conexão; escritas não confirmadas de uma requisição vazam para o commit de outra; impossível isolar estado em testes.
+Recommendation: Conexão por requisição gerenciada pelo ciclo de vida do Flask (`g` + `teardown_appcontext`), criada a partir da config injetada pelo composition root (T-08).
+
+### [HIGH] Tight Coupling / Missing Dependency Injection
+File: app.py:6-9
+Other occurrences: app.py:49, app.py:66
+Description: `app = Flask(__name__)` criado e configurado no import do módulo, sem fábrica `create_app()`; os handlers admin chamam `get_db()` diretamente, pulando model e controller.
+Impact: Impossível instanciar a aplicação com config de teste ou banco substituto; infraestrutura acoplada ao entry point.
+Recommendation: Fábrica da aplicação que cria config e dependências e as injeta em models/controllers; entry point fino mantendo `python app.py` (T-08).
+
+### [HIGH] Tight Coupling / Missing Dependency Injection
+File: controllers.py:208-210
+Other occurrences: controllers.py:247-250, controllers.py:266-273
+Description: Notificações simuladas inline (`print("ENVIANDO EMAIL...")`, `"ENVIANDO SMS"`, `"ENVIANDO PUSH"`, `"NOTIFICAÇÃO: ..."`) dentro dos handlers, e `health_check` chama `get_db()` e executa SQL direto.
+Impact: Impossível testar os handlers com serviço de notificação ou banco falsos; troca de infraestrutura exige editar o fluxo HTTP.
+Recommendation: Serviço de notificação com interface simples injetado no controller; consultas de health movidas para o model (T-08).
+
+### [HIGH] Missing Transaction / Callback Pyramid
+File: models.py:133-169
+Other occurrences: models.py:65-70
+Description: `criar_pedido` executa `INSERT INTO pedidos`, N `INSERT INTO itens_pedido` e N `UPDATE produtos SET estoque` com um único `db.commit()` no fim, sem `BEGIN`/rollback, e checa estoque em uma instrução para decrementar em outra; `deletar_produto` apaga o produto sem tratar `itens_pedido` que o referenciam.
+Impact: Falha no meio do laço deixa pedido sem itens ou estoque parcialmente baixado (e, com a conexão global, o `INSERT` pendente é confirmado pela próxima requisição); itens órfãos exibidos como `"Desconhecido"`.
+Recommendation: Agrupar as escritas em transação com rollback (`with conn:`/`BEGIN`), validar estoque e decrementar de forma atômica e tratar dependentes ao remover produto (T-09).
+
+### [HIGH] Insecure Runtime Configuration
+File: app.py:88
+Other occurrences: app.py:8, app.py:9
+Description: `app.run(host="0.0.0.0", port=5000, debug=True)`, `app.config["DEBUG"] = True` e `CORS(app)` sem lista de origens, tudo fixo no código.
+Impact: O debugger interativo do Werkzeug exposto em todas as interfaces permite execução remota de código; qualquer site pode fazer requisições cross-origin.
+Recommendation: Ler `DEBUG`, `HOST`, `PORT` e `CORS_ORIGINS` de config/env com defaults seguros (`debug=False`, host local, porta 5000 mantida) (T-01).
+
+### [HIGH] Insecure Runtime Configuration
+File: database.py:5
+Description: `db_path = "loja.db"` fixo no módulo, sem possibilidade de override por ambiente.
+Impact: Impossível apontar para outro banco em testes ou deploy sem editar o código.
+Recommendation: Ler o caminho do banco de `DATABASE_PATH` no módulo de configuração, com `loja.db` como default (T-01).
+
+### [MEDIUM] N+1 Queries
+File: models.py:177-200
+Other occurrences: models.py:209-232, models.py:239-254
+Description: `get_pedidos_usuario` e `get_todos_pedidos` executam, para cada pedido, um `SELECT` de itens e, para cada item, um `SELECT nome FROM produtos` (1 + N + N·M consultas); `relatorio_vendas` faz 5 `COUNT`/`SUM` sequenciais onde um `GROUP BY status` bastaria.
+Impact: Latência da listagem de pedidos cresce linearmente com pedidos e itens; timeouts em listagens grandes.
+Recommendation: Carregar itens com `JOIN` em `produtos` em uma consulta por listagem e montar a estrutura em memória, preservando forma e ordem da resposta; agregar o relatório com `GROUP BY` (T-10).
+
+### [MEDIUM] Missing or Inconsistent Input Validation
+File: controllers.py:169-171
+Other occurrences: controllers.py:43-50, controllers.py:87-90, controllers.py:118-121, controllers.py:195-201, controllers.py:239-240
+Description: `login` e `atualizar_status_pedido` chamam `dados.get(...)` sem checar corpo `None`; `preco < 0` compara sem validar tipo; `float(preco_min)` sem tratamento; `atualizar_produto` omite tamanho do nome e categoria válida exigidos em `criar_produto`; itens de `criar_pedido` não têm `produto_id`/`quantidade` validados.
+Impact: Requisições sem JSON ou com tipos errados geram 500 (`AttributeError`, `TypeError`, `KeyError`, `ValueError`); produto atualizado pode violar regras da criação.
+Recommendation: Validadores reutilizáveis por entidade aplicados em create e update, checando corpo, presença, tipo e faixa, devolvendo 400 com as mesmas mensagens atuais (T-11).
+
+### [MEDIUM] Generic Error Handling
+File: controllers.py:10-12
+Other occurrences: controllers.py:21-22, controllers.py:60-62, controllers.py:95-96, controllers.py:108-109, controllers.py:125-126, controllers.py:133-134, controllers.py:143-144, controllers.py:164-165, controllers.py:185-186, controllers.py:218-220 (+6 more)
+Description: Todos os 17 handlers repetem `except Exception as e: return jsonify({"erro": str(e)}), 500`; nenhum `@app.errorhandler` registrado.
+Impact: Mensagens internas (SQL, paths) expostas ao cliente; erros de validação virando 500; impossível diagnosticar sem log.
+Recommendation: Exceções de domínio (`NotFound`, `ValidationError`) e error handler central mapeando para status, com 500 genérico sem detalhes e log no servidor (T-12).
+
+### [MEDIUM] Duplicated Code
+File: controllers.py:28-46
+Other occurrences: controllers.py:72-90
+Description: A cadeia de validação de produto (`if not dados`, `"nome" not in dados`, `"preco"`, `"estoque"`, `preco < 0`, `estoque < 0`) está copiada em `criar_produto` e `atualizar_produto`, já com divergência (nome/categoria só na criação).
+Impact: Correção aplicada em um lugar e esquecida no outro; regras divergentes para o mesmo recurso.
+Recommendation: Extrair um validador único de produto usado por ambos os handlers (T-11).
+
+### [MEDIUM] Duplicated Code
+File: models.py:12-21
+Other occurrences: models.py:31-40, models.py:304-313
+Description: O dicionário de serialização de produto com 8 campos (`id`, `nome`, `descricao`, `preco`, `estoque`, `categoria`, `ativo`, `criado_em`) é montado 3 vezes.
+Impact: Adicionar ou renomear um campo exige tocar 3 pontos; divergência silenciosa entre listagem e busca.
+Recommendation: Extrair uma função de serialização de produto e usá-la nas 3 consultas (T-04, T-07).
+
+### [MEDIUM] Duplicated Code
+File: models.py:79-86
+Other occurrences: models.py:95-102
+Description: O dicionário de serialização de usuário (6 campos, incluindo `senha`) está duplicado em `get_todos_usuarios` e `get_usuario_por_id`.
+Impact: A remoção da senha da resposta precisa ser feita em 2 lugares, com risco de esquecer um.
+Recommendation: Serializador único de usuário com allow-list de campos públicos (T-04).
+
+### [MEDIUM] Duplicated Code
+File: models.py:178-200
+Other occurrences: models.py:211-232
+Description: O bloco de ~22 linhas que monta `pedido` com `itens` (incluindo `cursor2`, `cursor3` e `"Desconhecido"`) é idêntico em `get_pedidos_usuario` e `get_todos_pedidos`.
+Impact: A correção do N+1 e qualquer mudança de formato precisam ser aplicadas duas vezes.
+Recommendation: Extrair uma função que carrega e monta pedidos com itens a partir de uma lista de pedidos, usada pelas duas consultas (T-07, T-10).
+
+### [LOW] Magic Numbers / Strings
+File: controllers.py:52
+Other occurrences: controllers.py:47-49, controllers.py:242
+Description: Lista `categorias_validas` inline, limites `len(nome) < 2`/`> 200` e lista de status `["pendente", "aprovado", "enviado", "entregue", "cancelado"]` dentro dos handlers.
+Impact: Regras de domínio espalhadas na camada HTTP, sem um ponto único de alteração.
+Recommendation: Constantes nomeadas (`CATEGORIAS_VALIDAS`, `STATUS_PEDIDO`, limites de nome) em módulo de constantes da camada de modelo (T-14).
+
+### [LOW] Magic Numbers / Strings
+File: models.py:257-262
+Other occurrences: models.py:150, models.py:247-253
+Description: Faixas de desconto `> 10000`/`* 0.1`, `> 5000`/`* 0.05`, `> 1000`/`* 0.02` inline em `relatorio_vendas`; status `'pendente'`, `'aprovado'`, `'cancelado'` como literais no SQL.
+Impact: Regra comercial difícil de localizar e alterar com segurança; divergência com a lista de status do controller.
+Recommendation: Extrair faixas de desconto e status para constantes nomeadas reutilizadas por model e controller (T-14).
+
+### [LOW] Poor Naming
+File: controllers.py:14
+Other occurrences: controllers.py:56, controllers.py:64, controllers.py:98, controllers.py:160
+Description: Parâmetros e variáveis locais chamados `id`, sombreando o builtin do Python, em `buscar_produto`, `criar_produto`, `atualizar_produto`, `deletar_produto` e `criar_usuario`.
+Impact: Sombra de builtin dificulta leitura e pode causar bugs sutis ao usar `id()`.
+Recommendation: Renomear internamente para `produto_id`/`usuario_id`, mantendo o `<int:id>` do contrato de rota mapeado no controller (T-15).
+
+### [LOW] Poor Naming
+File: models.py:24
+Other occurrences: models.py:54, models.py:65, models.py:89, models.py:187, models.py:191, models.py:219, models.py:223
+Description: Parâmetro `id` sombreando o builtin em 4 funções e cursores com sufixo numérico `cursor2`/`cursor3` nas listagens de pedidos.
+Impact: Leitura lenta e confusão entre variáveis nas consultas aninhadas.
+Recommendation: Renomear para nomes de domínio (`produto_id`, `itens_cursor`) ao reescrever as consultas (T-15).
+
+### [LOW] Unused Imports / Dead Code
+File: database.py:2
+Other occurrences: models.py:2
+Description: `import os` em `database.py` e `import sqlite3` em `models.py` nunca são referenciados nos respectivos módulos.
+Impact: Ruído de leitura e falsa impressão de uso de ambiente/driver nesses módulos.
+Recommendation: Remover os imports não utilizados (T-16).
+
+### [LOW] Print/Console Logging
+File: controllers.py:8
+Other occurrences: controllers.py:11, controllers.py:57, controllers.py:61, controllers.py:106, controllers.py:161, controllers.py:179, controllers.py:182, controllers.py:208-210, controllers.py:219 (+3 more)
+Description: `print(...)` usado como log em controllers (`"Listando ..."`, `"ERRO: ..."`, `"Login bem-sucedido: " + email`, notificações) e em `app.py:56` (`"!!! BANCO DE DADOS RESETADO !!!"`).
+Impact: Logs sem nível nem destino configurável, impossíveis de filtrar ou desligar; e-mails de usuários escritos em stdout.
+Recommendation: Substituir por `logging` da stdlib com níveis, sem dados pessoais (T-16).
+
+================================
+Total: 31 findings
+================================
+
+Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]
