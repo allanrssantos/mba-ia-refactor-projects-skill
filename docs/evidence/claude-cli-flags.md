@@ -49,3 +49,24 @@ Set-Location $Root
 Calibracao (ADR-10): rodar somente a etapa 1 e, se quiser encerrar sem refatorar, `claude -p --continue "n"`.
 Entre tentativas: `scripts\reset-project.ps1 -Project N`.
 Alternativa aceita: execucao interativa (`claude` e depois `/refactor-arch`, responder `y`), salvando o transcript.
+
+## Avisos operacionais (aprendidos nas execucoes)
+
+1. **Dispare a etapa 1 pelo PowerShell.** No Git Bash (MSYS), o argumento `/refactor-arch` e convertido em caminho do Windows
+   (ex.: `C:/Program Files/Git/refactor-arch`) e a skill nao e invocada. Se precisar usar o Git Bash, desligue a conversao:
+   `MSYS_NO_PATHCONV=1 claude -p "/refactor-arch" ...`.
+2. **Redirecione o stdin.** Sem stdin, o `claude -p` espera e emite o aviso "no stdin data received". Use `< $null`
+   (PowerShell, ex.: `claude -p "/refactor-arch" --permission-mode plan < $null`; se o parser recusar `<`, use `$null | claude -p ...`)
+   ou `< /dev/null` (Bash).
+3. **Grave os logs em UTF-8.** No PowerShell 5.1 o `Tee-Object` gravou UTF-16LE e a saida nativa e decodificada pela code page
+   do console (acentos e `✓`/`├──` corrompidos). Antes de executar:
+   ```powershell
+   [Console]::OutputEncoding = [Text.Encoding]::UTF8
+   $OutputEncoding = [Text.Encoding]::UTF8
+   claude -p "/refactor-arch" --permission-mode plan < $null 2>&1 |
+     Out-File -FilePath $Root\docs\evidence\project-$N\stage1.log -Encoding utf8
+   ```
+   (`Out-File -Encoding utf8` no PS 5.1 grava com BOM; o `scripts\extract-report.ps1` le UTF-8 com/sem BOM e UTF-16 e grava o
+   relatorio em UTF-8 sem BOM.)
+4. **So a ultima mensagem aparece no log do `-p`.** Por isso a skill exige que a mensagem final da Fase 2 traga o bloco PHASE 1,
+   o relatorio e a pergunta juntos.

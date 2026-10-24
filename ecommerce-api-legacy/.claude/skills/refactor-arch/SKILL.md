@@ -55,7 +55,8 @@ Endpoints:     <N> routes
 5. Agrupe ocorrências conforme as regras do template. A severidade é a do catálogo: não reclassifique.
 6. Releia o trecho de cada `File:` (Read com offset) e corrija as linhas antes de imprimir.
 7. Ordene CRITICAL → HIGH → MEDIUM → LOW (desempate: ID do catálogo, depois caminho).
-8. Imprima o relatório exatamente neste formato (regras completas em `audit-report-template.md`):
+8. **Mensagem final única.** Em execução não interativa (`claude -p`) só a última mensagem do modelo fica visível, então a mensagem final da Fase 2 contém, nesta ordem e numa única mensagem: (a) o bloco `PHASE 1: PROJECT ANALYSIS` completo, repetido mesmo que já tenha sido impresso antes; (b) o `ARCHITECTURE AUDIT REPORT`; (c) a pergunta de confirmação. Nada de texto introdutório, comentário ou resumo fora dos blocos: a mensagem começa na linha `================================` do bloco PHASE 1 e termina na pergunta.
+9. Imprima o relatório exatamente neste formato (regras completas em `audit-report-template.md`; `Other occurrences:` é opcional e só aparece quando houver outras ocorrências):
 
 ```text
 ================================
@@ -72,6 +73,7 @@ CRITICAL: <n> | HIGH: <n> | MEDIUM: <n> | LOW: <n>
 
 ### [<SEVERITY>] <Nome do anti-pattern exatamente como no catálogo>
 File: <caminho/relativo>:<linha>[-<linha_fim>]
+Other occurrences: <caminho>:<linha>[-<fim>], <caminho>:<linha>[-<fim>], ...
 Description: <o que foi encontrado, citando o trecho ou identificador>
 Impact: <consequência concreta>
 Recommendation: <ação> (<T-xx>)
@@ -87,6 +89,7 @@ Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]
 
 ## Ponto de parada (obrigatório)
 
+- A resposta final da Fase 2 é uma única mensagem com o bloco PHASE 1, o relatório e a pergunta (passo 8 da Fase 2), sem texto fora dos blocos.
 - A última linha da resposta da Fase 2 é exatamente `Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]`.
 - Logo após imprimi-la, **encerre o turno**: nenhuma chamada de ferramenta, nenhum arquivo escrito, nenhum texto adicional. Em modo de plano (plan mode), não chame ExitPlanMode nem apresente plano: o relatório é a entrega.
 - Na próxima mensagem do usuário:

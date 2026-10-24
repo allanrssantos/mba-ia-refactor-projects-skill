@@ -425,7 +425,7 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 
 **IMPORTANTE:** Todos os critérios devem ser atingidos nos 3 projetos, não apenas em um!
 
-> **Sobre o projeto 3 (task-manager-api):** Este projeto já possui alguma separação de camadas. "aplicação funciona" significa que a API inicia sem erros e todos os endpoints continuam respondendo corretamente.
+> **Sobre o projeto 3 (task-manager-api):** Este projeto já possui alguma organização. "aplicação funciona" significa que a API inicia sem erros e todos os endpoints continuam respondendo corretamente.
 
 ## Referências
 

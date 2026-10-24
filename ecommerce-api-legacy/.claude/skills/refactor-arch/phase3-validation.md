@@ -239,6 +239,8 @@ Para cada ✗: leia o log de boot e o traceback, corrija o código, refaça o es
 - Rode de novo os padrões de busca do catálogo para AP-01, AP-02, AP-04, AP-05, AP-06, AP-14 e AP-20, e busque os literais de segredos encontrados na Fase 2 — `No hardcoded secrets in source` só é `✓` se não sobrar nenhum fora do `.env.example`.
 - Conte os findings residuais (inclusive riscos aceitos, como endpoint de SQL arbitrário protegido por token) e liste-os por ID e arquivo.
 
+**Remoção de arquivos legados (durante a refatoração):** use remoção simples de arquivo (`rm <arquivo>` / `Remove-Item <arquivo>`), nunca `git rm`. Não altere o índice do Git em nenhum momento (sem `git add`, `git rm`, `git mv`, `git reset`, `git checkout`, `git stash` ou commit): a revisão e o commit são do operador.
+
 **Limpeza (obrigatória, mesmo em caso de falha):**
 1. Encerre todos os processos iniciados e confirme que a porta está livre.
 2. Apague os bancos gerados pelas rodadas e restaure os de `<temp>/db-backup/` nos caminhos originais.

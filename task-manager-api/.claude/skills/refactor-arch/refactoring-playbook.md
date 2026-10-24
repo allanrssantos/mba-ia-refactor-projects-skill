@@ -740,6 +740,8 @@ create: async (req, res) => {
 
 **Armadilhas:** não tornar obrigatório um campo que antes era opcional; manter os defaults que o código aplicava; mensagens idênticas.
 
+**Regra para endpoints de update:** validação nova (ex.: alinhar o PUT às regras do POST) não pode mudar o status de entradas que antes eram aceitas (ex.: `200 → 400`) sem registro. Se a mudança for mantida, ela deve aparecer explicitamente no bloco de validação da Fase 3, na linha correspondente de `## Endpoint Check`, como desvio justificado (`(justified: <regra nova> — antes aceito com <status>)`), e ser contada em `<j> justified changes`. Na dúvida, preserve o status antigo e registre a validação faltante como finding residual.
+
 ## T-12 — Centralized Error Handler and Domain Exceptions
 
 **Resolve:** AP-14.
