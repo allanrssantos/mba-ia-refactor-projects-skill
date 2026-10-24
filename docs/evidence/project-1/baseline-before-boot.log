@@ -1,0 +1,60 @@
+﻿== stdout ==
+==================================================
+SERVIDOR INICIADO
+Rodando em http://localhost:5000
+==================================================
+ * Serving Flask app 'app'
+ * Debug mode: on
+==================================================
+SERVIDOR INICIADO
+Rodando em http://localhost:5000
+==================================================
+Listando 10 produtos
+Produto criado com ID: 11
+Usuário criado: smoke@teste.com
+Login bem-sucedido: admin@loja.com
+Login falhou: admin@loja.com
+ENVIANDO EMAIL: Pedido 1 criado para usuario 1
+ENVIANDO SMS: Seu pedido foi recebido!
+ENVIANDO PUSH: Novo pedido recebido pelo sistema
+NOTIFICAÇÃO: Pedido 1 foi aprovado! Preparar envio.
+Produto 11 deletado
+!!! BANCO DE DADOS RESETADO !!!
+== stderr ==
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.15.20:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 823-029-033
+127.0.0.1 - - [24/Oct/2026 12:51:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:24] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:25] "GET /produtos HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:25] "GET /produtos/1 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:25] "GET /produtos/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Oct/2026 12:51:25] "GET /produtos/busca?q=a HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:26] "POST /produtos HTTP/1.1" 201 -
+127.0.0.1 - - [24/Oct/2026 12:51:26] "POST /produtos HTTP/1.1" 400 -
+127.0.0.1 - - [24/Oct/2026 12:51:27] "PUT /produtos/1 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:27] "PUT /produtos/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Oct/2026 12:51:27] "GET /usuarios HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:27] "GET /usuarios/1 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:28] "GET /usuarios/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Oct/2026 12:51:28] "POST /usuarios HTTP/1.1" 201 -
+127.0.0.1 - - [24/Oct/2026 12:51:28] "POST /usuarios HTTP/1.1" 400 -
+127.0.0.1 - - [24/Oct/2026 12:51:29] "POST /login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:29] "POST /login HTTP/1.1" 401 -
+127.0.0.1 - - [24/Oct/2026 12:51:29] "POST /pedidos HTTP/1.1" 201 -
+127.0.0.1 - - [24/Oct/2026 12:51:29] "POST /pedidos HTTP/1.1" 400 -
+127.0.0.1 - - [24/Oct/2026 12:51:30] "GET /pedidos HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:30] "GET /pedidos/usuario/1 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:31] "PUT /pedidos/1/status HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:31] "PUT /pedidos/1/status HTTP/1.1" 400 -
+127.0.0.1 - - [24/Oct/2026 12:51:31] "GET /relatorios/vendas HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:32] "DELETE /produtos/11 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:32] "DELETE /produtos/9999 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Oct/2026 12:51:32] "POST /admin/query HTTP/1.1" 200 -
+127.0.0.1 - - [24/Oct/2026 12:51:33] "POST /admin/query HTTP/1.1" 400 -
+127.0.0.1 - - [24/Oct/2026 12:51:33] "POST /admin/reset-db HTTP/1.1" 200 -

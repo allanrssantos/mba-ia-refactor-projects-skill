@@ -1,0 +1,10 @@
+﻿== stdout ==
+
+> desafio-arquitetura-ia-boilerplate@1.0.0 start
+> node src/app.js
+
+Frankenstein LMS rodando na porta 3000...
+Processando cartão 4111222233334444 na chave pk_live_1234567890abcdef
+[LOG] Salvando no cache: last_checkout_2
+Processando cartão 5111222233334444 na chave pk_live_1234567890abcdef
+== stderr ==
