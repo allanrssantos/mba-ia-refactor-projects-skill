@@ -1,0 +1,10 @@
+﻿== stdout ==
+
+> desafio-arquitetura-ia-boilerplate@1.0.0 start
+> node src/app.js
+
+2026-10-24T16:33:25.814Z INFO LMS rodando na porta 3000...
+2026-10-24T16:33:27.501Z INFO payment PAID amount=497 card=****4444 gateway=not configured
+2026-10-24T16:33:27.584Z INFO checkout completed enrollment=2 course=Docker
+2026-10-24T16:33:27.635Z INFO payment DENIED amount=997 card=****4444 gateway=not configured
+== stderr ==

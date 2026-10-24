@@ -1,0 +1,92 @@
+Confirmação recebida. Iniciando a Fase 3: leio as referências da fase e depois faço o baseline da aplicação original.
+
+Referências lidas. Passo 3.0: criando o diretório temporário fora do projeto com o plano de requisições e o runner, depois subindo a aplicação original para a baseline.
+
+Camadas escritas. Agora removo os arquivos antigos (todos os usos migrados), tiro uma linha supérflua do composition root e rodo as duas rodadas de revalidação (sem token e com token).
+
+================================
+PHASE 3: REFACTORING COMPLETE
+================================
+## New Project Structure
+ecommerce-api-legacy/
+├── package.json                  ("start": node src/app.js, inalterado)
+├── .env.example
+└── src/
+    ├── app.js                    (entry point + composition root: createApp(); listen só se require.main === module)
+    ├── config/
+    │   └── index.js              (único leitor de process.env)
+    ├── models/
+    │   ├── database.js           (conexão, schema, seed, wrapper Promise + transaction serializada)
+    │   ├── constants.js
+    │   ├── passwordHasher.js     (scrypt + sal, node:crypto)
+    │   ├── userModel.js
+    │   ├── courseModel.js
+    │   ├── enrollmentModel.js
+    │   ├── paymentModel.js
+    │   ├── auditLogModel.js
+    │   └── reportModel.js        (relatório financeiro em 1 consulta com LEFT JOIN)
+    ├── services/
+    │   ├── checkoutService.js    (fluxo transacional do checkout)
+    │   ├── paymentGateway.js     (gateway simulado injetável)
+    │   └── userService.js        (exclusão com dependentes em transação)
+    ├── controllers/
+    │   ├── checkoutController.js
+    │   ├── adminController.js
+    │   └── userController.js
+    ├── routes/
+    │   ├── checkoutRoutes.js
+    │   ├── adminRoutes.js        (adminGuard aplicado)
+    │   └── userRoutes.js
+    ├── middlewares/
+    │   ├── asyncHandler.js
+    │   ├── errorHandler.js
+    │   └── adminGuard.js
+    └── utils/
+        ├── errors.js
+        ├── logger.js
+        └── validators.js
+
+Removidos: src/AppManager.js, src/utils.js (todos os usos migrados).
+
+## Transformations Applied
+  - T-01 Extract Configuration to Environment → src/config/index.js, .env.example (PORT, HOST, DB_PATH, PAYMENT_GATEWAY_KEY, ADMIN_TOKEN, LOG_LEVEL); segredos antigos removidos
+  - T-03 Split God Class into MVC Layers → src/models/*, src/services/*, src/controllers/*, src/routes/*, src/app.js
+  - T-04 Output Serializer with Field Allow-list / log sem dados sensíveis → src/services/paymentGateway.js (cartão mascarado `****1234`, chave nunca logada)
+  - T-05 Guard Admin Endpoints by Configuration → src/middlewares/adminGuard.js, src/routes/adminRoutes.js (timingSafeEqual, 403 "Forbidden")
+  - T-06 Hash Passwords with Standard Library → src/models/passwordHasher.js, src/models/userModel.js, src/models/database.js (seed com hash); badCrypto removido
+  - T-07 Move Business Rules to Model/Service → src/services/checkoutService.js, src/models/reportModel.js, src/services/userService.js; controllers finos
+  - T-08 Inject Dependencies via Composition Root → src/app.js (createApp injeta db, logger, gateway, models, services); globalCache/totalRevenue removidos
+  - T-09 Wrap Multi-step Writes in Transaction (async/await) → src/models/database.js (transaction com BEGIN/COMMIT/ROLLBACK em fila), src/services/checkoutService.js, src/services/userService.js (DELETE remove payments + enrollments + user)
+  - T-10 Replace N+1 with Join → src/models/reportModel.js (1 consulta em vez de 1+N+2·N·M; ORDER BY c.id, e.id)
+  - T-11 Centralize Input Validation → src/utils/validators.js (corpo ausente / card não-string → 400 "Bad Request")
+  - T-12 Centralized Error Handler and Domain Exceptions → src/utils/errors.js, src/middlewares/errorHandler.js, src/middlewares/asyncHandler.js
+  - T-14 Extract Named Constants/Enums → src/models/constants.js (PAYMENT_STATUS, APPROVED_CARD_PREFIX, DEFAULT_PASSWORD, UNKNOWN_STUDENT)
+  - T-15 Rename Internals, Keep External Contract → src/utils/validators.js (usr/eml/pwd/c_id/card → userName/email/password/courseId/cardNumber), AppManager → camadas nomeadas
+  - T-16 Structured Logging and Dead Code Removal → src/utils/logger.js; removidos totalRevenue, globalCache, logAndCache, dbUser/dbPass/smtpUser
+
+## Endpoint Check (baseline → after)
+  ✓ POST   /api/checkout                  200 → 200  (new user, approved)
+  ✓ POST   /api/checkout                  200 → 200  (existing user, approved)
+  ✓ POST   /api/checkout                  400 → 400  (payment denied)
+  ✓ POST   /api/checkout                  404 → 404  (course not found)
+  ✓ POST   /api/checkout                  400 → 400  (missing fields)
+  ✓ GET    /api/admin/financial-report    200 → 403  (justified: admin guard; 200 com X-Admin-Token e corpo JSON idêntico à baseline)
+  ✓ DELETE /api/users/1                   200 → 200
+  ✓ DELETE /api/users/999999              200 → 200  (nonexistent id)
+  ✓ POST   /api/checkout                  ERR → 400  (justified: numeric card derrubava o processo com TypeError; agora 400 "Bad Request")
+
+## Validation
+  ✓ Application boots without errors (npm start → porta 3000; logs de boot sem Error/Traceback nas duas rodadas)
+  ✓ All endpoints respond correctly (7/9 match baseline, 2 justified changes)
+  ✓ No hardcoded secrets in source (varredura AP-01/02/04/05/06/14/20 sem ocorrências; `process.env` lido apenas em src/config/index.js)
+  ✓ Residual findings: 2 (src/models/constants.js:12 — senha padrão "123456" aplicada quando `pwd` é omitido, comportamento original preservado; src/controllers/userController.js:8 — texto de sucesso do DELETE mantido por contrato, embora matrículas e pagamentos agora sejam removidos)
+================================
+
+Recapitulando. A aplicação legada em 3 arquivos foi auditada (21 findings) e refatorada para MVC em `src/`, com o mesmo comando de boot e o mesmo contrato HTTP. A baseline foi capturada com a aplicação original e as duas rodadas pós-refatoração bateram na primeira tentativa, sem ciclos de correção. Nenhum processo ficou ativo, a porta 3000 está livre, o diretório temporário foi apagado e o `git status` mostra apenas o código refatorado, as remoções de `AppManager.js` e `utils.js` e o novo `.env.example`. Nada foi commitado.
+
+Dois pontos ficam a seu critério:
+
+- **Mensagem do DELETE.** Mantive o texto original "Usuário deletado, mas as matrículas e pagamentos ficaram sujos no banco." porque corpo de resposta é contrato, mas ele agora é falso. Se quiser, troco por "Usuário deletado." em uma linha.
+- **Senha padrão.** O checkout sem `pwd` continua criando o usuário com a senha "123456" (agora com hash). Tornar `pwd` obrigatório mudaria o contrato, então preservei.
+
+<!-- result: subtype=success is_error=false turns=40 cost_usd=4.84327775 session=69b5ef03-4b61-4af6-bcca-e48fd5d5ea4a -->

@@ -1,0 +1,158 @@
+Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+Varredura concluída: nenhuma concatenação de SQL (todas as queries usam `?`) e nenhuma API depreciada de Node/Express no código do projeto. Linhas conferidas nas leituras numeradas desta execução.
+
+================================
+ARCHITECTURE AUDIT REPORT
+================================
+Project: ecommerce-api-legacy
+Stack:   JavaScript (Node.js) + Express
+Files:   3 analyzed | ~180 lines of code
+
+## Summary
+CRITICAL: 6 | HIGH: 6 | MEDIUM: 3 | LOW: 6
+
+## Findings
+
+### [CRITICAL] Hardcoded Credentials
+File: src/utils.js:3
+Other occurrences: src/utils.js:4
+Description: Objeto `config` versionado com `dbPass: "senha_super_secreta_prod_123"` e `paymentGatewayKey: "pk_live_1234567890abcdef"` (prefixo de chave live de gateway), além de `dbUser` e `smtpUser` literais.
+Impact: Qualquer pessoa com acesso ao repositório obtém a senha do banco e a chave do gateway de pagamento; rotação exige novo deploy e a chave deve ser tratada como comprometida.
+Recommendation: Mover para módulo de configuração que lê `process.env` com defaults de desenvolvimento não secretos, documentando as variáveis em `.env.example` (T-01).
+
+### [CRITICAL] God Class / God Method
+File: src/AppManager.js:4-139
+Description: A classe `AppManager` cria a conexão SQLite no construtor, cria o schema e os seeds em `initDb`, e em `setupRoutes` registra as 3 rotas, executa todo o SQL e aplica as regras de checkout, pagamento e relatório financeiro sobre 5 tabelas.
+Impact: Nenhuma parte é testável isoladamente; qualquer alteração em uma rota arrisca o bootstrap, o schema e as demais rotas; impossível reutilizar regras fora do HTTP.
+Recommendation: Separar em config, models por entidade (users, courses, enrollments, payments, audit_logs), controllers e routes, com composition root montando as dependências (T-03, apoiado por T-08 e T-07).
+
+### [CRITICAL] Sensitive Data Exposure
+File: src/AppManager.js:45
+Description: `console.log(\`Processando cartão ${cc} na chave ${config.paymentGatewayKey}\`)` grava em stdout o número completo do cartão e a chave do gateway a cada checkout.
+Impact: Dados de cartão (PCI-DSS) e a credencial do gateway ficam em logs acessíveis a operadores, agregadores de log e backups.
+Recommendation: Remover o log ou mascarar o cartão (`****4444`) e nunca logar a chave; centralizar em logger sem dados sensíveis (T-04, T-16).
+
+### [CRITICAL] Unprotected Admin/Destructive Endpoint
+File: src/AppManager.js:80
+Description: `app.get('/api/admin/financial-report', ...)` devolve receita por curso e nomes dos alunos sem nenhum middleware de autenticação nem checagem de header/token no handler.
+Impact: Qualquer cliente na rede extrai dados financeiros e PII dos alunos com uma única requisição GET.
+Recommendation: Manter a rota e protegê-la com guard configurável via `ADMIN_TOKEN` no ambiente e header `X-Admin-Token` comparado em tempo constante, respondendo 403 sem token válido (T-05).
+
+### [CRITICAL] Insecure Password Storage
+File: src/AppManager.js:18
+Other occurrences: src/AppManager.js:68-69
+Description: Seed grava a senha `'123'` em texto puro na coluna `pass`; no checkout a senha passa por `badCrypto(p || "123456")` antes do INSERT, um "hash" reversível e truncado.
+Impact: Vazamento do banco expõe as senhas imediatamente; senhas reutilizadas comprometem outras contas dos alunos.
+Recommendation: Usar KDF com sal da stdlib (`crypto.scryptSync`/`pbkdf2Sync` + sal aleatório) no model de usuário, com verificação compatível com o formato legado (T-06).
+
+### [CRITICAL] Insecure Password Storage
+File: src/utils.js:17-23
+Description: `badCrypto` concatena 10.000 vezes os 2 primeiros caracteres do base64 da senha e devolve `substring(0, 10)`: sem sal, determinístico e com colisões triviais (senhas com o mesmo prefixo geram o mesmo valor).
+Impact: Tabela de prefixos recupera as senhas em segundos; senhas diferentes autenticam como a mesma.
+Recommendation: Substituir por hash com sal e iterações altas via `node:crypto` e remover `badCrypto` (T-06).
+
+### [HIGH] Business Logic in Controller/Route
+File: src/AppManager.js:28-78
+Other occurrences: src/AppManager.js:80-129
+Description: O handler de `POST /api/checkout` (50 linhas) valida o payload, busca curso e usuário, cria usuário, decide aprovação do pagamento por prefixo do cartão e grava em 4 tabelas; o handler do relatório agrega receita e alunos em memória.
+Impact: Regras de checkout e de relatório não são reutilizáveis nem testáveis sem HTTP; qualquer mudança de regra toca a camada de transporte.
+Recommendation: Controllers finos que extraem entrada, chamam um service/model de checkout e de relatório e montam a resposta (T-07, com T-11 para validação).
+
+### [HIGH] Global Mutable State
+File: src/utils.js:9
+Other occurrences: src/utils.js:10, src/utils.js:14
+Description: `let globalCache = {}` e `let totalRevenue = 0` no escopo do módulo; `logAndCache` muta `globalCache[key] = data` a cada checkout sem limite nem leitura.
+Impact: Cache cresce sem limite por processo (vazamento de memória), estado compartilhado entre requisições e impossível de isolar em testes.
+Recommendation: Remover o cache não utilizado ou encapsulá-lo em um componente criado no composition root e injetado (T-08).
+
+### [HIGH] Tight Coupling / Missing Dependency Injection
+File: src/AppManager.js:7
+Description: O construtor executa `new sqlite3.Database(':memory:')` com caminho fixo; models e rotas acessam `this.db` diretamente, sem possibilidade de substituição.
+Impact: Impossível testar com banco falso ou trocar o caminho do banco sem editar a classe que contém as regras de negócio.
+Recommendation: Criar a conexão em um módulo de banco configurável e injetá-la nos models via fábrica/composition root (T-08).
+
+### [HIGH] Tight Coupling / Missing Dependency Injection
+File: src/app.js:5-14
+Description: `app` é criado, configurado, conectado ao `AppManager` e iniciado com `app.listen` no mesmo arquivo em tempo de import, sem `createApp()`.
+Impact: Não é possível importar a aplicação para testes sem abrir a porta e inicializar o banco.
+Recommendation: Fábrica `createApp()` separada do bootstrap, mantendo `node src/app.js` como entry point fino (T-08).
+
+### [HIGH] Missing Transaction / Callback Pyramid
+File: src/AppManager.js:37-77
+Other occurrences: src/AppManager.js:83-128, src/AppManager.js:131-137
+Description: O checkout encadeia 6 níveis de callbacks e faz até 4 INSERTs dependentes (users, enrollments, payments, audit_logs) sem `BEGIN/COMMIT/ROLLBACK`, com `return` de erro entre as escritas; `DELETE /api/users/:id` apaga o usuário sem tratar enrollments e payments (a própria resposta admite que ficam "sujos").
+Impact: Falha parcial deixa matrícula sem pagamento ou usuário criado sem matrícula; remoção de usuário acumula órfãos; fluxo ilegível e propenso a respostas duplicadas.
+Recommendation: Wrapper com Promises/`async-await` sobre o sqlite3, escritas agrupadas em transação com rollback e remoção dos dependentes ao excluir usuário (T-09).
+
+### [HIGH] Insecure Runtime Configuration
+File: src/utils.js:6
+Description: `port: 3000` fixo no objeto `config`, sem leitura de `process.env.PORT` nem qualquer override de ambiente.
+Impact: Impossível ajustar a porta por ambiente sem editar código; o mesmo módulo mistura segredos e parâmetros de execução.
+Recommendation: Módulo de config lendo `PORT` do ambiente com default 3000, documentado em `.env.example` (T-01).
+
+### [MEDIUM] N+1 Queries
+File: src/AppManager.js:89-125
+Description: Para cada curso (`courses.forEach`) executa `db.all` de enrollments e, para cada matrícula, `db.get` em users e `db.get` em payments: 1 + N + 2·N·M consultas por relatório.
+Impact: Latência do relatório cresce com o número de matrículas; contadores manuais `coursesPending`/`enrPending` tornam a ordem da resposta não determinística.
+Recommendation: Uma consulta com JOIN entre courses, enrollments, users e payments e montagem do relatório em memória, preservando a forma da resposta (T-10).
+
+### [MEDIUM] Missing or Inconsistent Input Validation
+File: src/AppManager.js:35
+Other occurrences: src/AppManager.js:46, src/AppManager.js:132
+Description: Só checa presença de `usr`, `eml`, `c_id` e `card`; `cc.startsWith("4")` com `card` numérico lança `TypeError` dentro de callback do sqlite3; `c_id` e `req.params.id` não são validados como inteiros; `pwd` ausente vira senha padrão.
+Impact: Payload com `card` numérico derruba o processo Node; ids inválidos geram 404/204 silenciosos em vez de 400.
+Recommendation: Validador de checkout reutilizável checando corpo, presença, tipo e faixa, devolvendo 400 com as mensagens já usadas (T-11).
+
+### [MEDIUM] Generic Error Handling
+File: src/AppManager.js:133-135
+Other occurrences: src/AppManager.js:57, src/AppManager.js:92, src/AppManager.js:104, src/AppManager.js:106
+Description: O callback do `DELETE FROM users` ignora `err` e responde sucesso sempre; os callbacks das linhas 57, 92, 104 e 106 não leem `err` (em 92 `enrollments.length` lança se a query falhar); não há middleware `(err, req, res, next)` registrado.
+Impact: Falhas de banco viram respostas 200 ou derrubam o processo; nenhum erro é diagnosticável.
+Recommendation: Erros de domínio mapeados por um error handler central do Express e tratamento de erro em todas as operações assíncronas (T-12).
+
+### [LOW] Magic Numbers / Strings
+File: src/AppManager.js:46
+Other occurrences: src/AppManager.js:48, src/AppManager.js:68, src/AppManager.js:108
+Description: Regra de aprovação `cc.startsWith("4")`, estados `"PAID"`/`"DENIED"` comparados literalmente e senha padrão `"123456"` inline.
+Impact: Regra de pagamento e estados difíceis de localizar e alterar com consistência entre checkout e relatório.
+Recommendation: Constantes nomeadas (`PAYMENT_STATUS`, prefixo aprovado) em módulo de constantes da camada de modelo (T-14).
+
+### [LOW] Magic Numbers / Strings
+File: src/utils.js:19
+Other occurrences: src/utils.js:22
+Description: `10000` iterações e `substring(0, 10)` em `badCrypto` sem nome nem justificativa.
+Impact: Parâmetros do "hash" ilegíveis; serão eliminados junto com a função.
+Recommendation: Substituir pela KDF padrão com parâmetros nomeados em constantes (T-14, junto de T-06).
+
+### [LOW] Poor Naming
+File: src/AppManager.js:29-33
+Other occurrences: src/AppManager.js:89, src/AppManager.js:102
+Description: Variáveis `u`, `e`, `p`, `cid`, `cc` para nome, e-mail, senha, curso e cartão; `c` e `enr` nos laços do relatório; a classe `AppManager` não comunica responsabilidade.
+Impact: Leitura lenta e risco de confusão entre `e` (e-mail) e `err`.
+Recommendation: Renomear internamente com nomes de domínio, mantendo os campos externos `usr`, `eml`, `pwd`, `c_id`, `card` mapeados no controller (T-15).
+
+### [LOW] Poor Naming
+File: src/utils.js:17
+Description: Função `badCrypto` com nome pejorativo e enganoso (não é criptografia) e `logAndCache` que mistura dois verbos.
+Impact: Nome não comunica o que a função faz nem alerta corretamente sobre o risco.
+Recommendation: Substituir por função de hash com nome explícito no model de usuário e remover `logAndCache` (T-15).
+
+### [LOW] Unused Imports / Dead Code
+File: src/AppManager.js:2
+Other occurrences: src/utils.js:2-5, src/utils.js:9-10, src/utils.js:25
+Description: `totalRevenue` importado e nunca usado; `globalCache` e `totalRevenue` exportados sem leitura; `dbUser`, `dbPass` e `smtpUser` nunca referenciados (o banco é em memória e não há SMTP).
+Impact: Falsa impressão de cache e de integração SMTP existentes; segredos mantidos no código sem função.
+Recommendation: Remover exports e configs mortos ao criar o módulo de configuração (T-16).
+
+### [LOW] Print/Console Logging
+File: src/AppManager.js:45
+Other occurrences: src/app.js:13, src/utils.js:13
+Description: `console.log` usado como log de aplicação no checkout, no cache e no boot, sem níveis nem destino configurável.
+Impact: Logs impossíveis de filtrar ou desligar; o da linha 45 vaza dados sensíveis (ver Sensitive Data Exposure).
+Recommendation: Logger encapsulado em módulo próprio com níveis e sem dados sensíveis (T-16).
+
+================================
+Total: 21 findings
+================================
+
+Phase 2 complete. Proceed with refactoring (Phase 3)? [y/n]

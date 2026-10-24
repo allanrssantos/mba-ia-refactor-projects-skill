@@ -1,0 +1,7 @@
+# project-2 (ecommerce-api-legacy) base=http://localhost:3000 admin_token=set
+POST   /api/checkout -> 200
+POST   /api/checkout -> 400
+POST   /api/checkout -> 400
+POST   /api/checkout -> 404
+GET    /api/admin/financial-report -> 200
+DELETE /api/users/1 -> 200
