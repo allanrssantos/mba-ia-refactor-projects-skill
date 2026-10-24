@@ -1,6 +1,6 @@
 # Análise manual dos 3 projetos
 
-> Insumo da Seção A do `README.md` (RF-01 a RF-03, CA-05). Feita sobre o código original (commit `f50e265`) **antes** da escrita da skill; cada linha citada foi conferida no código.
+> Insumo da Seção A do `README.md` (RF-01 a RF-03, CA-05). Feita sobre o código original (commit `6d1ce62`) **antes** da escrita da skill; cada linha citada foi conferida no código.
 > Severidades conforme a escala do enunciado (SPEC §5.1). A coluna "AP" mapeia cada problema para a entrada do catálogo da skill (`.claude/skills/refactor-arch/anti-patterns-catalog.md`), garantindo a rastreabilidade exigida em RF-03.
 > Caminhos relativos à raiz de cada projeto.
 

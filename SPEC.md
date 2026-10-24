@@ -193,7 +193,7 @@ PHASE 3: REFACTORING COMPLETE
 
 ### 7.5 Inventário de endpoints originais (baseline para validação da Fase 3)
 
-Levantado do código original (commit `f50e265` do fork). A validação considera aprovado quando cada endpoint responde com o **mesmo código de status** da baseline (capturada antes da refatoração) para a mesma requisição, ou com código justificado por correção de segurança documentada. Nenhum endpoint pode responder 5xx ou deixar de existir (404 de rota inexistente) sem justificativa documentada.
+Levantado do código original (commit `6d1ce62` do fork). A validação considera aprovado quando cada endpoint responde com o **mesmo código de status** da baseline (capturada antes da refatoração) para a mesma requisição, ou com código justificado por correção de segurança documentada. Nenhum endpoint pode responder 5xx ou deixar de existir (404 de rota inexistente) sem justificativa documentada.
 
 **Projeto 1 — code-smells-project (porta 5000) — 19 rotas**
 | Método | Path |
@@ -388,7 +388,7 @@ Valores esperados por projeto na Fase 1 (referência para o QA):
 | RK-04 | Falha de build do `sqlite3` nativo no Windows. | Validar `npm install` na etapa devops; se falhar, registrar e usar versão com prebuild compatível dentro de `^5.1.6`. |
 | RK-05 | Conflito de porta 5000 / processos órfãos de servidores em background no Windows. | Encerrar processos após cada validação (`Stop-Process`); validar projetos sequencialmente. |
 | RK-06 | Skill acoplada aos projetos (exemplos específicos viram regras). | RF-23; revisão de agnosticismo pelo QA (busca por nomes de tabelas/rotas dos projetos nos arquivos da skill). |
-| RK-07 | Relatório com linhas imprecisas (alucinação de `arquivo:linha`). | QA amostra ≥ 5 findings por relatório e confere linha no código original (commit `f50e265`). |
+| RK-07 | Relatório com linhas imprecisas (alucinação de `arquivo:linha`). | QA amostra ≥ 5 findings por relatório e confere linha no código original (commit `6d1ce62`). |
 | RK-08 | Banco SQLite de arquivo (`loja.db`, `tasks.db`) gerado no boot fica sujo entre baseline e pós-refatoração, alterando respostas. | Apagar `*.db` antes de cada rodada de validação (e rodar `seed.py` no projeto 3). |
 | RK-09 | Saída de terminal com caracteres ANSI/Unicode (`✓`, `├──`) corrompida ao salvar no Windows. | Salvar relatórios em UTF-8 sem BOM; remover sequências ANSI. |
 | RK-10 | Necessidade de 2–4 iterações da skill (prevista no enunciado) gera divergência entre cópias e relatórios antigos. | R-06; relatórios finais devem corresponder à última versão da skill; restaurar o projeto para o estado original (`git checkout`) antes de reexecutar. |
