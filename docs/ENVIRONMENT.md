@@ -11,7 +11,7 @@ Os 3 projetos legados usam SQLite (arquivo ou memoria); nao ha servicos externos
 | Node.js / npm | v22.20.0 |
 | curl | `curl.exe` nativo |
 | Claude Code | 2.1.310 (flags em `docs/evidence/claude-cli-flags.md`) |
-| Git | repositorio na branch `main`, commit base `f50e265` |
+| Git | repositorio na branch `main`, commit base `6d1ce62` |
 
 ## Projetos, numeracao e portas
 

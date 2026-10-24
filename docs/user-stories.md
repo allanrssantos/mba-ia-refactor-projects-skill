@@ -18,7 +18,7 @@ Cobre: RF-01, RF-02, RF-03, CA-05
 ### Critérios de aceite
 ```gherkin
 Cenário: Distribuição mínima de severidade
-  Dado o código original de code-smells-project (commit f50e265)
+  Dado o código original de code-smells-project (commit 6d1ce62)
   Quando a análise manual for documentada
   Então existem no mínimo 5 problemas
   E no mínimo 1 é CRITICAL ou HIGH

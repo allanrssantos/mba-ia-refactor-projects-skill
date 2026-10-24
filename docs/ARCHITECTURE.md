@@ -388,7 +388,7 @@ O entry point permanece no caminho apontado pelo comando de boot original (ADR-0
 
 ### 4.1 Anti-patterns (20 entradas; ≥ 1 por severidade; inclui Deprecated API Usage)
 
-As evidências abaixo são da observação dos projetos (insumo para a análise manual do python-developer e para calibrar sinais); **não** entram na skill (RF-23). Linhas conferidas no commit `f50e265`.
+As evidências abaixo são da observação dos projetos (insumo para a análise manual do python-developer e para calibrar sinais); **não** entram na skill (RF-23). Linhas conferidas no commit `6d1ce62`.
 
 | ID | Nome (título do finding) | Sev. | Sinais de detecção (resumo) | Evidência observada | Resolve com |
 |---|---|---|---|---|---|
@@ -589,7 +589,7 @@ As flags devem ser confirmadas com `claude --help` na versão 2.1.310; se `plan`
 | D4 | `scripts/smoke/smoke.py` (stdlib: `urllib`, `json`, `argparse`): executa um plano contra `--base-url`, opcional `--admin-token`, grava JSON (`method, path, status, top_level_keys`) e tabela Markdown | Runner único para as 3 stacks | ADR-04 |
 | D5 | `scripts/smoke/run-project.ps1 -Project N -Label before|after [-AdminToken x]`: apaga `*.db` (inclusive `instance/`), roda seed no P3, `Start-Process` do comando de boot com log em arquivo, polling da porta (30 s), roda `smoke.py`, `Stop-Process` do PID e filhos, confere porta livre | `docs/evidence/project-N/<label>.json`, `<label>-boot.log` | RK-05, RK-08 |
 | D6 | `scripts/smoke/compare.py before.json after.json --allow "POST /admin/query:403" ...`: relatório de divergências | Tabela antes/depois | US-17 |
-| D7 | Capturar a **baseline "antes"** dos 3 projetos no código original (commit `f50e265`), sequencialmente (P1 e P3 dividem a porta 5000); reconfirmar a contagem de rotas via `app.url_map` (Flask) e inspeção do router (Express) | `docs/evidence/project-{1,2,3}/before.json` | SPEC 7.5, P-02 |
+| D7 | Capturar a **baseline "antes"** dos 3 projetos no código original (commit `6d1ce62`), sequencialmente (P1 e P3 dividem a porta 5000); reconfirmar a contagem de rotas via `app.url_map` (Flask) e inspeção do router (Express) | `docs/evidence/project-{1,2,3}/before.json` | SPEC 7.5, P-02 |
 | D8 | `scripts/extract-report.ps1 -Log <saida> -Out reports/audit-project-N.md`: recorta o bloco da Fase 2, remove ANSI, grava UTF-8 sem BOM | Utilitário do ADR-02 | RF-26, RK-09 |
 | D9 | `scripts/check-skill-copies.ps1`: compara hashes das 3 cópias | Verificação CA-11 | ADR-13 |
 
@@ -618,7 +618,7 @@ Observações para o plano de requisições (dados determinísticos com banco li
 | Q4 | Cópias idênticas (`check-skill-copies.ps1`) | CA-11 |
 | Q5 | Grep de agnosticismo nos arquivos da skill | RF-23, RK-06 |
 | Q6 | Bloco PHASE 1 de cada projeto contra a tabela da SPEC 9.3 | CA-01 |
-| Q7 | Relatórios: template, `Total` = nº de blocos `### [`, ordem, ≥ 5, ≥ 1 CRITICAL/HIGH; amostrar ≥ 5 `arquivo:linha` por relatório no commit `f50e265` | CA-02, CA-03, CA-13, CA-15, RK-07 |
+| Q7 | Relatórios: template, `Total` = nº de blocos `### [`, ordem, ≥ 5, ≥ 1 CRITICAL/HIGH; amostrar ≥ 5 `arquivo:linha` por relatório no commit `6d1ce62` | CA-02, CA-03, CA-13, CA-15, RK-07 |
 | Q8 | Evidência da pausa: pergunta literal + `git status` limpo entre as etapas | CA-12, ADR-01 |
 | Q9 | ≥ 5 problemas manuais do P1 presentes em `reports/audit-project-1.md` | CA-06 |
 | Q10 | Boot com o comando documentado e `compare.py` baseline × pós (inclusive admin com/sem token) | CA-04, US-17 |
