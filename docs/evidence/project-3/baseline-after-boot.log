@@ -1,0 +1,51 @@
+﻿== stdout ==
+ * Serving Flask app 'app'
+ * Debug mode: off
+== stderr ==
+2026-10-24 14:02:24,593 INFO werkzeug: WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+2026-10-24 14:02:24,596 INFO werkzeug: Press CTRL+C to quit
+2026-10-24 14:02:26,468 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:26] "GET / HTTP/1.1" 200 -
+2026-10-24 14:02:26,762 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:26] "GET /health HTTP/1.1" 200 -
+2026-10-24 14:02:27,059 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:27] "GET /tasks HTTP/1.1" 200 -
+2026-10-24 14:02:27,345 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:27] "GET /tasks/1 HTTP/1.1" 200 -
+2026-10-24 14:02:27,626 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:27] "GET /tasks/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:27,896 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:27] "GET /tasks/search?q=api HTTP/1.1" 200 -
+2026-10-24 14:02:28,197 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:28] "GET /tasks/stats HTTP/1.1" 200 -
+2026-10-24 14:02:28,470 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:28] "GET /users HTTP/1.1" 200 -
+2026-10-24 14:02:28,749 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:28] "GET /users/1 HTTP/1.1" 200 -
+2026-10-24 14:02:29,013 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:29] "GET /users/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:29,298 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:29] "GET /users/1/tasks HTTP/1.1" 200 -
+2026-10-24 14:02:29,634 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:29] "GET /reports/summary HTTP/1.1" 200 -
+2026-10-24 14:02:29,919 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:29] "GET /reports/user/1 HTTP/1.1" 200 -
+2026-10-24 14:02:30,212 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:30] "GET /reports/user/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:30,484 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:30] "GET /categories HTTP/1.1" 200 -
+2026-10-24 14:02:30,928 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:30] "POST /login HTTP/1.1" 200 -
+2026-10-24 14:02:31,373 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:31] "POST /login HTTP/1.1" 401 -
+2026-10-24 14:02:31,791 INFO services.user_service: user created id=4
+2026-10-24 14:02:31,793 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:31] "POST /users HTTP/1.1" 201 -
+2026-10-24 14:02:32,056 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:32] "POST /users HTTP/1.1" 400 -
+2026-10-24 14:02:32,344 INFO services.category_service: category created id=5
+2026-10-24 14:02:32,346 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:32] "POST /categories HTTP/1.1" 201 -
+2026-10-24 14:02:32,632 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:32] "POST /categories HTTP/1.1" 400 -
+2026-10-24 14:02:32,940 INFO services.task_service: task created id=11
+2026-10-24 14:02:32,942 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:32] "POST /tasks HTTP/1.1" 201 -
+2026-10-24 14:02:33,210 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:33] "POST /tasks HTTP/1.1" 400 -
+2026-10-24 14:02:33,497 INFO services.task_service: task updated id=11
+2026-10-24 14:02:33,499 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:33] "PUT /tasks/11 HTTP/1.1" 200 -
+2026-10-24 14:02:33,785 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:33] "PUT /tasks/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:34,083 INFO services.user_service: user updated id=4
+2026-10-24 14:02:34,084 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:34] "PUT /users/4 HTTP/1.1" 200 -
+2026-10-24 14:02:34,346 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:34] "PUT /users/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:34,660 INFO services.category_service: category updated id=5
+2026-10-24 14:02:34,661 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:34] "PUT /categories/5 HTTP/1.1" 200 -
+2026-10-24 14:02:34,950 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:34] "PUT /categories/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:35,247 INFO services.task_service: task deleted id=11
+2026-10-24 14:02:35,249 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:35] "DELETE /tasks/11 HTTP/1.1" 200 -
+2026-10-24 14:02:35,539 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:35] "DELETE /tasks/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:35,829 INFO services.user_service: user deleted id=4
+2026-10-24 14:02:35,830 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:35] "DELETE /users/4 HTTP/1.1" 200 -
+2026-10-24 14:02:36,103 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:36] "DELETE /users/9999 HTTP/1.1" 404 -
+2026-10-24 14:02:36,391 INFO services.category_service: category deleted id=5
+2026-10-24 14:02:36,392 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:36] "DELETE /categories/5 HTTP/1.1" 200 -
+2026-10-24 14:02:36,677 INFO werkzeug: 127.0.0.1 - - [24/Oct/2026 14:02:36] "DELETE /categories/9999 HTTP/1.1" 404 -
